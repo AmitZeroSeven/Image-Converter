@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Convert</title>
+    <style>
+        body {
+            width: 80%;
+            margin: auto;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+        }
+        .logo img {
+            height: 50px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .image-preview {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .image-box {
+            width: 45%;
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            background-color: #f0f0f0;
+        }
+        .options {
+            margin-top: 20px;
+        }
+        .colors {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .color-box {
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            border: 1px solid #000;
+        }
+        .btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+        img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo"><img src="download (2).jpg" alt="Logo"></div>
+        <h1>Image Convert - by Amit007</h1>
+    </header>
+    <div class="container">
+        <input type="file" id="upload" accept="image/*" onchange="previewImage(event)">
+        <div class="options">
+            <h3>Choose Background Color</h3>
+            <div class="colors" id="colorOptions"></div>
+        </div>
+        <button class="btn" onclick="convertImage()">Convert Now</button>
+        <button class="btn" onclick="enhanceImage()">Enhance Image</button>
+        <div class="image-preview">
+            <div class="image-box" id="before">Before Image</div>
+            <div class="image-box" id="after">After Image</div>
+        </div>
+        <button class="btn" id="download" style="display: none;">Download</button>
+    </div>
+    <script>
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('before').innerHTML = `<img src="${e.target.result}" alt="Uploaded Image">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function changeBg(color) {
+            document.getElementById('after').style.background = color;
+        }
+
+        function convertImage() {
+            const beforeImage = document.querySelector('#before img');
+            if (!beforeImage) return alert('Please upload an image first');
+            
+            const apiKey = 'GJhYZDr8ZaZkQzhkoxzdoQuj';
+            const formData = new FormData();
+            formData.append('image_file', document.getElementById('upload').files[0]);
+            formData.append('size', 'auto');
+
+            fetch('https://api.remove.bg/v1.0/removebg', {
+                method: 'POST',
+                headers: {
+                    'X-Api-Key': apiKey
+                },
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                document.getElementById('after').innerHTML = `<img src="${url}" alt="Processed Image">`;
+                document.getElementById('download').style.display = 'block';
+                document.getElementById('download').onclick = function() {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'processed-image.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                };
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function enhanceImage() {
+            const beforeImage = document.querySelector('#before img');
+            if (!beforeImage) return alert('Please upload an image first');
+            
+            const apiKey = 'GJhYZDr8ZaZkQzhkoxzdoQuj';
+            const formData = new FormData();
+            formData.append('image', document.getElementById('upload').files[0]);
+
+            fetch('https://api.deepai.org/api/torch-srgan', {
+                method: 'POST',
+                headers: {
+                    'Api-Key': apiKey
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.output_url) {
+                    document.getElementById('after').innerHTML = `<img src="${data.output_url}" alt="Enhanced Image">`;
+                    document.getElementById('download').style.display = 'block';
+                    document.getElementById('download').onclick = function() {
+                        const a = document.createElement('a');
+                        a.href = data.output_url;
+                        a.download = 'enhanced-image.png';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                } else {
+                    alert('Enhancement failed. Try again.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
